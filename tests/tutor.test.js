@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LEVELS, buildSystemInstruction, buildLiveConfig, topicsForLevel, LEVEL_TOOL } from '../shared/tutor.js';
-import handler, { sanitizeOptions } from '../netlify/functions/token.mjs';
+import handler, { sanitizeOptions } from '../server/token.js';
 
 test('all eleven ACTFL sublevels are defined', () => {
   assert.deepEqual(LEVELS.map((l) => l.name), [

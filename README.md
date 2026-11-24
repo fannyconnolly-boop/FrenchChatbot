@@ -31,7 +31,7 @@ topics or persona.
 ## How it works
 
 ```
-Browser ──POST /api/token──▶ Netlify Function (holds GEMINI_API_KEY)
+Browser ──POST /api/token──▶ Node server (holds GEMINI_API_KEY)
    │                              └─▶ Gemini: create single-use ephemeral token,
    │                                  locked to the model + tutor config
    └──WebSocket (ephemeral token)──▶ Gemini Live API
@@ -39,20 +39,32 @@ Browser ──POST /api/token──▶ Netlify Function (holds GEMINI_API_KEY)
 ```
 
 Your API key never reaches the browser. Each conversation gets a token that can be used once, must connect
-within 60 seconds, and expires after 30 minutes.
+within 60 seconds, and expires after 30 minutes. `server/index.js` serves the built app and the token endpoint,
+and it uses no dependencies beyond Node itself.
 
-## Deploy to Netlify
+## Deploy to Render
 
 1. Get a Gemini API key at <https://aistudio.google.com/apikey>.
-2. In Netlify: **Add new site → Import an existing project**, then choose this GitHub repository. The build settings
-   come from `netlify.toml` (`npm run build`, publish `dist`, functions in `netlify/functions`).
-3. Under **Site configuration → Environment variables**, add:
+2. At <https://dashboard.render.com>, choose **New → Blueprint** and connect this GitHub repository. Render reads
+   `render.yaml` and creates a free web service.
+   (Or choose **New → Web Service**: Runtime *Node*, Build command `npm ci --include=dev && npm run build`,
+   Start command `npm start`.)
+3. Fill in the environment variables when Render asks for them:
    | Variable | Required | Purpose |
    |---|---|---|
    | `GEMINI_API_KEY` | yes | Your Gemini API key |
    | `ACCESS_CODE` | recommended | Learners must enter this code before starting. Without it, anyone with the link can use your quota. |
    | `GEMINI_LIVE_MODEL` | no | Overrides the Live model (default `gemini-3.8-live`). Check the current IDs at <https://ai.google.dev/gemini-api/docs/models>. |
-4. Deploy. The site has to be served over HTTPS for microphone access, and Netlify does this by default.
+   | `SESSIONS_PER_HOUR_PER_IP` | no | Limits how many conversations one network can start per hour (default 30). |
+4. Open the `https://….onrender.com` URL. Render serves it over HTTPS, which browsers require for the microphone.
+
+If you change environment variables later, Render redeploys automatically. On the free plan the service sleeps
+after 15 minutes without visitors, so the first visit afterwards takes about 30 seconds to load.
+
+### Netlify (alternative)
+
+`netlify.toml` and `netlify/functions/token.mjs` are still included, so the same repo can also deploy on Netlify:
+import the repo and set the same environment variables.
 
 ## Run locally
 

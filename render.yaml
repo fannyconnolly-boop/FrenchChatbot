@@ -1,0 +1,18 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repository.
+services:
+  - type: web
+    name: parlons-french-chatbot
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: GEMINI_API_KEY
+        sync: false # you'll be asked to paste it when you create the service
+      - key: GEMINI_LIVE_MODEL
+        sync: false
+      - key: ACCESS_CODE
+        sync: false
