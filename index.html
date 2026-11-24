@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parlons ! French conversation partner</title>
+    <meta name="description" content="Practise speaking French by voice with an AI conversation partner adapted to your ACTFL proficiency level." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Parlons<span>&nbsp;!</span></div>
+      <div class="tagline">Real conversations in French, at your level</div>
+    </header>
+
+    <!-- SETUP -->
+    <main id="setup" class="setup">
+      <section class="card">
+        <h2>1. Your speaking level <small>(ACTFL)</small></h2>
+        <p class="hint">Pick the description that sounds most like you speaking French today. Not sure? Let Camille find your level.</p>
+        <label class="placement">
+          <input type="checkbox" id="placement" />
+          <span><strong>Not sure — find my level</strong> through a relaxed conversation</span>
+        </label>
+        <div id="levels" class="levels" role="radiogroup" aria-label="ACTFL level"></div>
+      </section>
+
+      <section class="card">
+        <h2>2. What shall we talk about?</h2>
+        <div id="topics" class="chips" role="radiogroup" aria-label="Topic"></div>
+      </section>
+
+      <section class="card grid2">
+        <div>
+          <h2>3. Options</h2>
+          <label class="field">Your first name <small>(optional)</small>
+            <input id="learnerName" maxlength="40" autocomplete="given-name" placeholder="e.g. Sam" />
+          </label>
+          <label class="field">Camille's voice
+            <select id="voice"></select>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="adaptive" checked />
+            <span><strong>Adaptive</strong>: Camille adjusts up or down as she hears what you can do</span>
+          </label>
+          <label class="field" id="accessField" hidden>Access code
+            <input id="accessCode" type="password" autocomplete="off" />
+          </label>
+        </div>
+        <div class="principles">
+          <h2>How this works</h2>
+          <ul>
+            <li><strong>Meaning first.</strong> Camille responds to <em>what</em> you say. No red pen: if she misunderstands, she'll ask, just like a friend.</li>
+            <li><strong>Just talk.</strong> Mistakes are part of it. Getting your message across is the win.</li>
+            <li>Stuck? Use <em>Slower</em>, <em>Repeat</em> or <em>Hint</em>, or type instead of speaking.</li>
+            <li>Use headphones for the smoothest conversation.</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="start-row">
+        <button id="startBtn" class="primary big">🎙️ Commencer la conversation</button>
+        <p id="setupError" class="error" role="alert"></p>
+      </div>
+    </main>
+
+    <!-- CONVERSATION -->
+    <main id="convo" class="convo" hidden>
+      <aside class="stage">
+        <div id="orb" class="orb" data-state="idle"><div class="ring"></div><div class="core"></div></div>
+        <div id="status" class="status" aria-live="polite">Connexion…</div>
+
+        <div class="levelbox">
+          <div class="label">Camille is speaking to you at</div>
+          <div id="levelBadge" class="badge">—</div>
+          <div id="levelEvidence" class="evidence"></div>
+        </div>
+
+        <div class="controls">
+          <button id="muteBtn" class="round" title="Mute / unmute microphone" aria-pressed="false">🎙️</button>
+          <button id="endBtn" class="round danger" title="End conversation">✕</button>
+        </div>
+        <div class="helpers">
+          <button data-cmd="SLOWER">🐢 Slower</button>
+          <button data-cmd="REPEAT">🔁 Repeat</button>
+          <button data-cmd="HINT">💡 Hint</button>
+        </div>
+        <button id="wrapBtn" class="secondary">🏁 Finish &amp; get feedback</button>
+        <div id="timer" class="timer">00:00</div>
+      </aside>
+
+      <section class="chat">
+        <div class="chat-head">
+          <h2>Conversation</h2>
+          <label class="toggle small"><input type="checkbox" id="showTranscript" checked /> Show transcript</label>
+        </div>
+        <div id="transcript" class="transcript" aria-live="polite"></div>
+        <form id="textForm" class="textform">
+          <input id="textInput" placeholder="Écris ici si tu préfères…" autocomplete="off" />
+          <button class="primary">Envoyer</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="foot">Levels follow the ACTFL Proficiency Guidelines. Powered by the Gemini Live API.</footer>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
