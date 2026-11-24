@@ -2,108 +2,197 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Parlons ! French conversation partner</title>
     <meta name="description" content="Practise speaking French by voice with an AI conversation partner adapted to your ACTFL proficiency level." />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>" />
+    <meta name="theme-color" content="#3b5bfd" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%233b5bfd'/><stop offset='1' stop-color='%23ff4d6d'/></linearGradient></defs><circle cx='50' cy='50' r='46' fill='url(%23g)'/><text x='50' y='66' font-size='46' text-anchor='middle' fill='white' font-family='Georgia,serif' font-style='italic'>P</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,500..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
+    <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
     <header class="topbar">
-      <div class="brand">Parlons<span>&nbsp;!</span></div>
-      <div class="tagline">Real conversations in French, at your level</div>
+      <a class="brand" href="/" aria-label="Parlons home">
+        <span class="logo" aria-hidden="true">P</span>
+        <span>Parlons<em>&nbsp;!</em></span>
+      </a>
+      <span class="pill subtle">ACTFL-adapted · Voice</span>
     </header>
 
     <!-- SETUP -->
     <main id="setup" class="setup">
+      <section class="hero">
+        <div>
+          <p class="eyebrow"><svg class="i"><use href="#i-sparkles" /></svg> Your French conversation partner</p>
+          <h1>Parlez français.<br /><span class="grad">Pour de vrai.</span></h1>
+          <p class="lead">Real spoken conversations with Camille, pitched to your level. She cares about <strong>what you mean</strong>, not about catching your mistakes.</p>
+          <ul class="facts">
+            <li><svg class="i"><use href="#i-wave" /></svg>Real-time voice</li>
+            <li><svg class="i"><use href="#i-ladder" /></svg>Adapts as you improve</li>
+            <li><svg class="i"><use href="#i-heart" /></svg>No red pen</li>
+          </ul>
+        </div>
+        <div class="hero-orb" aria-hidden="true">
+          <div class="orb demo" data-state="speaking"><i></i><i></i><i></i><b></b></div>
+          <div class="hero-bubble a">Tu aimes le café ou le thé&nbsp;?</div>
+          <div class="hero-bubble b">Euh… le thé&nbsp;! J'adore le thé.</div>
+        </div>
+      </section>
+
       <section class="card">
-        <h2>1. Your speaking level <small>(ACTFL)</small></h2>
-        <p class="hint">Pick the description that sounds most like you speaking French today. Not sure? Let Camille find your level.</p>
+        <div class="card-head">
+          <span class="step">1</span>
+          <div>
+            <h2>Your speaking level</h2>
+            <p class="hint">Choose the description that sounds most like you speaking French today.</p>
+          </div>
+        </div>
         <label class="placement">
           <input type="checkbox" id="placement" />
-          <span><strong>Not sure — find my level</strong> through a relaxed conversation</span>
+          <span class="placement-icon"><svg class="i"><use href="#i-compass" /></svg></span>
+          <span><strong>Not sure? Find my level</strong><small>Camille works it out through a relaxed chat. It won't feel like a test.</small></span>
+          <span class="switch" aria-hidden="true"></span>
         </label>
         <div id="levels" class="levels" role="radiogroup" aria-label="ACTFL level"></div>
       </section>
 
       <section class="card">
-        <h2>2. What shall we talk about?</h2>
-        <div id="topics" class="chips" role="radiogroup" aria-label="Topic"></div>
+        <div class="card-head">
+          <span class="step">2</span>
+          <div>
+            <h2>What shall we talk about?</h2>
+            <p class="hint">More abstract topics unlock at higher levels.</p>
+          </div>
+        </div>
+        <div id="topics" class="topics" role="radiogroup" aria-label="Topic"></div>
       </section>
 
-      <section class="card grid2">
-        <div>
-          <h2>3. Options</h2>
-          <label class="field">Your first name <small>(optional)</small>
+      <section class="card">
+        <div class="card-head">
+          <span class="step">3</span>
+          <div><h2>A few details</h2></div>
+        </div>
+        <div class="options">
+          <label class="field">Your first name <small>optional</small>
             <input id="learnerName" maxlength="40" autocomplete="given-name" placeholder="e.g. Sam" />
           </label>
-          <label class="field">Camille's voice
-            <select id="voice"></select>
-          </label>
+          <div class="field">Camille's voice
+            <div id="voice" class="segmented" role="radiogroup" aria-label="Voice"></div>
+          </div>
           <label class="toggle">
             <input type="checkbox" id="adaptive" checked />
-            <span><strong>Adaptive</strong>: Camille adjusts up or down as she hears what you can do</span>
+            <span class="switch" aria-hidden="true"></span>
+            <span><strong>Adaptive level</strong><small>Camille moves up or down as she hears what you can do</small></span>
           </label>
           <label class="field" id="accessField" hidden>Access code
             <input id="accessCode" type="password" autocomplete="off" />
           </label>
         </div>
-        <div class="principles">
-          <h2>How this works</h2>
-          <ul>
-            <li><strong>Meaning first.</strong> Camille responds to <em>what</em> you say. No red pen: if she misunderstands, she'll ask, just like a friend.</li>
-            <li><strong>Just talk.</strong> Mistakes are part of it. Getting your message across is the win.</li>
-            <li>Stuck? Use <em>Slower</em>, <em>Repeat</em> or <em>Hint</em>, or type instead of speaking.</li>
-            <li>Use headphones for the smoothest conversation.</li>
-          </ul>
+        <div class="tips">
+          <div><svg class="i"><use href="#i-heart" /></svg><span><strong>Meaning first.</strong> If Camille doesn't understand, she asks, just like a friend would.</span></div>
+          <div><svg class="i"><use href="#i-life" /></svg><span><strong>Stuck?</strong> Tap <em>Slower</em>, <em>Repeat</em> or <em>Hint</em>, or type instead.</span></div>
+          <div><svg class="i"><use href="#i-headphones" /></svg><span><strong>Headphones</strong> give the smoothest conversation.</span></div>
         </div>
       </section>
 
-      <div class="start-row">
-        <button id="startBtn" class="primary big">🎙️ Commencer la conversation</button>
-        <p id="setupError" class="error" role="alert"></p>
+      <div class="startbar">
+        <div class="summary">
+          <span class="summary-label">Ready when you are</span>
+          <span id="summary" class="summary-text"></span>
+          <span id="setupError" class="error" role="alert"></span>
+        </div>
+        <button id="startBtn" class="btn primary lg">
+          <svg class="i"><use href="#i-mic" /></svg> Commencer
+        </button>
       </div>
     </main>
 
     <!-- CONVERSATION -->
     <main id="convo" class="convo" hidden>
       <aside class="stage">
-        <div id="orb" class="orb" data-state="idle"><div class="ring"></div><div class="core"></div></div>
+        <div class="stage-top">
+          <span class="live"><span class="dot"></span>Live</span>
+          <span id="timer" class="timer">00:00</span>
+        </div>
+
+        <div id="orb" class="orb" data-state="idle"><i></i><i></i><i></i><b></b></div>
+        <div id="viz" class="viz" aria-hidden="true"></div>
         <div id="status" class="status" aria-live="polite">Connexion…</div>
 
         <div class="levelbox">
-          <div class="label">Camille is speaking to you at</div>
-          <div id="levelBadge" class="badge">—</div>
+          <div class="levelbox-row">
+            <span class="label">Speaking to you at</span>
+            <span id="levelBadge" class="badge">—</span>
+          </div>
+          <div id="ladder" class="ladder" aria-hidden="true"></div>
           <div id="levelEvidence" class="evidence"></div>
         </div>
 
         <div class="controls">
-          <button id="muteBtn" class="round" title="Mute / unmute microphone" aria-pressed="false">🎙️</button>
-          <button id="endBtn" class="round danger" title="End conversation">✕</button>
+          <button id="muteBtn" class="ctl mic" title="Mute microphone" aria-label="Mute microphone" aria-pressed="false">
+            <svg class="i on"><use href="#i-mic" /></svg><svg class="i off"><use href="#i-mic-off" /></svg>
+          </button>
+          <button id="endBtn" class="ctl end" title="End conversation" aria-label="End conversation">
+            <svg class="i"><use href="#i-x" /></svg>
+          </button>
         </div>
+
         <div class="helpers">
-          <button data-cmd="SLOWER">🐢 Slower</button>
-          <button data-cmd="REPEAT">🔁 Repeat</button>
-          <button data-cmd="HINT">💡 Hint</button>
+          <button data-cmd="SLOWER"><svg class="i"><use href="#i-gauge" /></svg>Slower</button>
+          <button data-cmd="REPEAT"><svg class="i"><use href="#i-repeat" /></svg>Repeat</button>
+          <button data-cmd="HINT"><svg class="i"><use href="#i-bulb" /></svg>Hint</button>
         </div>
-        <button id="wrapBtn" class="secondary">🏁 Finish &amp; get feedback</button>
-        <div id="timer" class="timer">00:00</div>
+        <button id="wrapBtn" class="btn ghost"><svg class="i"><use href="#i-flag" /></svg>Finish &amp; get feedback</button>
       </aside>
 
       <section class="chat">
         <div class="chat-head">
-          <h2>Conversation</h2>
-          <label class="toggle small"><input type="checkbox" id="showTranscript" checked /> Show transcript</label>
+          <div class="who-head">
+            <span class="avatar">C</span>
+            <div><strong>Camille</strong><small>Paris · Montréal · Dakar</small></div>
+          </div>
+          <label class="toggle compact" title="Blur Camille's words for listening practice">
+            <input type="checkbox" id="showTranscript" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <span>Transcript</span>
+          </label>
         </div>
         <div id="transcript" class="transcript" aria-live="polite"></div>
-        <form id="textForm" class="textform">
+        <form id="textForm" class="composer">
           <input id="textInput" placeholder="Écris ici si tu préfères…" autocomplete="off" />
-          <button class="primary">Envoyer</button>
+          <button class="btn primary icon" aria-label="Send"><svg class="i"><use href="#i-send" /></svg></button>
         </form>
       </section>
     </main>
 
-    <footer class="foot">Levels follow the ACTFL Proficiency Guidelines. Powered by the Gemini Live API.</footer>
+    <footer class="foot">Levels follow the ACTFL Proficiency Guidelines · Powered by the Gemini Live API</footer>
+
+    <!-- Icon sprite (stroke icons) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" /></symbol>
+        <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M2 2l20 20" /><path d="M18.9 13.4A7 7 0 0 0 19 12v-2" /><path d="M5 10v2a7 7 0 0 0 12 5" /><path d="M15 9.3V5a3 3 0 0 0-5.7-1.3" /><path d="M9 9v3a3 3 0 0 0 5.1 2.1" /><path d="M12 19v3" /></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
+        <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></symbol>
+        <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol>
+        <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14-4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol>
+        <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></symbol>
+        <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><path d="M4 22v-7" /></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></symbol>
+        <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 10.5l-6.1 1.7L12 18l-1.9-5.8L4 10.5l6.1-1.7z" /><path d="M19 17v4M17 19h4" /></symbol>
+        <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 12h2M6 8v8M10 5v14M14 9v6M18 7v10M22 12h-2" /></symbol>
+        <symbol id="i-ladder" viewBox="0 0 24 24"><path d="M4 20h4v-5H4zM10 20h4V10h-4zM16 20h4V4h-4z" /></symbol>
+        <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z" /></symbol>
+        <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z" /></symbol>
+        <symbol id="i-life" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><path d="m4.9 4.9 4.3 4.3M14.8 14.8l4.3 4.3M14.8 9.2l4.3-4.3M4.9 19.1l4.3-4.3" /></symbol>
+        <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      </defs>
+    </svg>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

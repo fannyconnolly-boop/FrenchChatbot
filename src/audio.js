@@ -67,7 +67,20 @@ export class PcmPlayer {
     if (this.ctx.state === 'suspended') await this.ctx.resume();
     this.gain = this.ctx.createGain();
     this.gain.connect(this.ctx.destination);
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 512;
+    this.gain.connect(this.analyser);
+    this.levelBuf = new Float32Array(this.analyser.fftSize);
     this.nextTime = 0;
+  }
+
+  /** Current output loudness, roughly 0–1 (for the visualiser). */
+  level() {
+    if (!this.analyser || this.sources.size === 0) return 0;
+    this.analyser.getFloatTimeDomainData(this.levelBuf);
+    let sum = 0;
+    for (const v of this.levelBuf) sum += v * v;
+    return Math.sqrt(sum / this.levelBuf.length);
   }
 
   play(base64, mimeType = '') {
