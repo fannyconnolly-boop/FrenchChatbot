@@ -42,7 +42,7 @@ test('live config has audio, transcription and the level tool', () => {
   assert.deepEqual(c.responseModalities, ['AUDIO']);
   assert.ok(c.inputAudioTranscription && c.outputAudioTranscription);
   assert.equal(c.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Aoede');
-  assert.equal(c.tools[0], LEVEL_TOOL);
+  assert.deepEqual(c.tools[0], LEVEL_TOOL);
 });
 
 test('sanitizeOptions rejects junk', () => {
@@ -65,4 +65,35 @@ test('token endpoint guards method, key and access code', async () => {
   } finally {
     process.env = saved;
   }
+});
+
+test('French 4 is limited to Intermediate Low–High with unit topics', () => {
+  const o = sanitizeOptions({ course: 'francais-4', level: 'advanced-low', topic: 'f4-souvenir' });
+  assert.equal(o.level, 'intermediate-mid'); // out-of-range level falls back to the class target
+  assert.equal(o.topic, 'f4-souvenir');
+  assert.equal(sanitizeOptions({ course: 'francais-4', topic: 'f5-partir' }).topic, 'free'); // other class's unit
+  const c = buildLiveConfig(o);
+  assert.deepEqual(c.tools[0].functionDeclarations[0].parameters.properties.level.enum, ['intermediate-low', 'intermediate-mid', 'intermediate-high']);
+  assert.match(c.systemInstruction, /CLASS CONTEXT/);
+  assert.match(c.systemInstruction, /L'amitié et les relations/);
+  assert.match(c.systemInstruction, /never pitch your French below Intermediate Low or above Intermediate High/);
+});
+
+test('French 5 allows Intermediate Mid–Advanced Low; placement starts at the bottom of the range', () => {
+  const o = sanitizeOptions({ course: 'francais-5', level: 'advanced-low', topic: 'f5-reseaux', placement: true });
+  assert.equal(o.level, 'advanced-low');
+  const s = buildSystemInstruction(o);
+  assert.match(s, /LEVEL: Intermediate Mid/);
+  assert.match(s, /only probe as high as Advanced Low/);
+  assert.match(s, /réseaux sociaux/);
+  assert.match(s, /988/);
+  assert.equal(sanitizeOptions({ course: 'francais-5', level: 'novice-low' }).level, 'intermediate-high');
+});
+
+test('open practice keeps all levels and general topics', () => {
+  const o = sanitizeOptions({ course: 'nope', level: 'novice-low', topic: 'f4-musique' });
+  assert.equal(o.course, null);
+  assert.equal(o.level, 'novice-low');
+  assert.equal(o.topic, 'free');
+  assert.equal(buildLiveConfig(o).tools[0].functionDeclarations[0].parameters.properties.level.enum.length, 11);
 });

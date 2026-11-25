@@ -20,14 +20,27 @@
         <span class="logo" aria-hidden="true">P</span>
         <span>Parlons<em>&nbsp;!</em></span>
       </a>
-      <span class="pill subtle">ACTFL-adapted · Voice</span>
+      <a id="coursePill" class="pill subtle" href="/">ACTFL-adapted · Voice</a>
     </header>
 
+    <!-- HOME: choose a class -->
+    <main id="home" class="setup" hidden>
+      <section class="hero home-hero">
+        <div>
+          <p class="eyebrow"><svg class="i"><use href="#i-sparkles" /></svg> <span>Your French conversation partner</span></p>
+          <h1>Parlez français.<br /><span class="grad">Pour de vrai.</span></h1>
+          <p class="lead">Choose your class to talk with Camille about your units, at your level.</p>
+        </div>
+      </section>
+      <div id="courseCards" class="course-cards"></div>
+      <p class="open-link"><a href="/libre">Open practice: all levels and general topics →</a></p>
+    </main>
+
     <!-- SETUP -->
-    <main id="setup" class="setup">
+    <main id="setup" class="setup" hidden>
       <section class="hero">
         <div>
-          <p class="eyebrow"><svg class="i"><use href="#i-sparkles" /></svg> Your French conversation partner</p>
+          <p class="eyebrow" id="setupEyebrow"><svg class="i"><use href="#i-sparkles" /></svg> <span>Your French conversation partner</span></p>
           <h1>Parlez français.<br /><span class="grad">Pour de vrai.</span></h1>
           <p class="lead">Real spoken conversations with Camille, pitched to your level. She cares about <strong>what you mean</strong>, not about catching your mistakes.</p>
           <ul class="facts">
@@ -65,7 +78,7 @@
           <span class="step">2</span>
           <div>
             <h2>What shall we talk about?</h2>
-            <p class="hint">More abstract topics unlock at higher levels.</p>
+            <p class="hint" id="topicsHint">More abstract topics unlock at higher levels.</p>
           </div>
         </div>
         <div id="topics" class="topics" role="radiogroup" aria-label="Topic"></div>

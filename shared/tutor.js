@@ -1,5 +1,8 @@
 // Shared between the browser UI and the Netlify Function.
 // Everything that defines *how the tutor teaches* lives here.
+// Course-specific content (French 4, French 5 units) lives in courses.js.
+import { getCourse, courseTopic } from './courses.js';
+export { COURSES, getCourse } from './courses.js';
 
 /**
  * ACTFL Proficiency Guidelines (speaking), with guidance on how the
@@ -116,18 +119,18 @@ Probe toward Superior functions: ask the learner to support an opinion, consider
 
 /** Conversation themes. `minGroup` hides themes that are too abstract for lower levels. */
 export const TOPICS = [
-  { id: 'free', label: 'Libre — whatever comes up', minGroup: 'Novice' },
-  { id: 'intro', label: 'Se présenter — getting to know each other', minGroup: 'Novice' },
-  { id: 'food', label: 'La cuisine — food & eating out', minGroup: 'Novice' },
-  { id: 'routine', label: 'Le quotidien — daily life', minGroup: 'Novice' },
-  { id: 'cafe', label: 'Au café — role-play: ordering', minGroup: 'Novice' },
-  { id: 'travel', label: 'Les voyages — trips & places', minGroup: 'Novice' },
-  { id: 'weekend', label: 'Le week-end — past and future plans', minGroup: 'Intermediate' },
-  { id: 'hotel', label: "À l'hôtel — role-play with a problem", minGroup: 'Intermediate' },
-  { id: 'culture', label: 'La francophonie — music, film, cities', minGroup: 'Intermediate' },
-  { id: 'news', label: "L'actualité — current events", minGroup: 'Advanced' },
-  { id: 'debate', label: 'Débat — defend an opinion', minGroup: 'Advanced' },
-  { id: 'ideas', label: 'Idées — abstract & hypothetical', minGroup: 'Superior' },
+  { id: 'free', emoji: '💬', label: 'Libre — whatever comes up', minGroup: 'Novice' },
+  { id: 'intro', emoji: '👋', label: 'Se présenter — getting to know each other', minGroup: 'Novice' },
+  { id: 'food', emoji: '🥐', label: 'La cuisine — food & eating out', minGroup: 'Novice' },
+  { id: 'routine', emoji: '☀️', label: 'Le quotidien — daily life', minGroup: 'Novice' },
+  { id: 'cafe', emoji: '☕', label: 'Au café — role-play: ordering', minGroup: 'Novice' },
+  { id: 'travel', emoji: '🧳', label: 'Les voyages — trips & places', minGroup: 'Novice' },
+  { id: 'weekend', emoji: '📅', label: 'Le week-end — past and future plans', minGroup: 'Intermediate' },
+  { id: 'hotel', emoji: '🛎️', label: "À l'hôtel — role-play with a problem", minGroup: 'Intermediate' },
+  { id: 'culture', emoji: '🎬', label: 'La francophonie — music, film, cities', minGroup: 'Intermediate' },
+  { id: 'news', emoji: '📰', label: "L'actualité — current events", minGroup: 'Advanced' },
+  { id: 'debate', emoji: '⚖️', label: 'Débat — defend an opinion', minGroup: 'Advanced' },
+  { id: 'ideas', emoji: '💡', label: 'Idées — abstract & hypothetical', minGroup: 'Superior' },
 ];
 
 const GROUP_ORDER = ['Novice', 'Intermediate', 'Advanced', 'Superior', 'Distinguished'];
@@ -142,8 +145,29 @@ export function getLevel(id) {
   return LEVELS.find((l) => l.id === id) ?? LEVELS[4];
 }
 
-export function getTopic(id) {
-  return TOPICS.find((t) => t.id === id) ?? TOPICS[0];
+/** A general topic or, when a course is given, one of that course's unit topics. */
+export function getTopic(id, courseId) {
+  return courseTopic(courseId, id) ?? TOPICS.find((t) => t.id === id) ?? TOPICS[0];
+}
+
+/** The ACTFL levels a course allows (all levels when there is no course). */
+export function courseLevels(courseId) {
+  const course = getCourse(courseId);
+  return course ? LEVELS.filter((l) => course.levels.includes(l.id)) : LEVELS;
+}
+
+/** Clamp a requested level to the course's range; falls back to the course target. */
+export function levelForCourse(levelId, courseId) {
+  const course = getCourse(courseId);
+  if (!course) return getLevel(levelId).id;
+  return course.levels.includes(levelId) ? levelId : course.target;
+}
+
+/** Topic ids a learner may pick in this course: unit topics plus general topics for their level. */
+export function allowedTopicIds(courseId, levelId) {
+  const course = getCourse(courseId);
+  const unitIds = (course?.units ?? []).flatMap((u) => u.topics.map((t) => t.id));
+  return [...unitIds, ...topicsForLevel(levelId).map((t) => t.id)];
 }
 
 export const VOICES = ['Aoede', 'Kore', 'Leda', 'Charon', 'Puck', 'Fenrir'];
@@ -151,7 +175,8 @@ export const VOICES = ['Aoede', 'Kore', 'Leda', 'Charon', 'Puck', 'Fenrir'];
 export const LEVEL_TOOL_NAME = 'update_level_estimate';
 
 /** Function the tutor calls (silently) to tell the app how it is currently pitching the conversation. */
-export const LEVEL_TOOL = {
+export function makeLevelTool(levelIds = LEVELS.map((l) => l.id)) {
+  return {
   functionDeclarations: [
     {
       name: LEVEL_TOOL_NAME,
@@ -162,7 +187,7 @@ export const LEVEL_TOOL = {
         properties: {
           level: {
             type: 'STRING',
-            enum: LEVELS.map((l) => l.id),
+            enum: levelIds,
             description: 'The ACTFL sublevel you are now adapting to.',
           },
           evidence: {
@@ -175,18 +200,30 @@ export const LEVEL_TOOL = {
       },
     },
   ],
-};
+  };
+}
+
+export const LEVEL_TOOL = makeLevelTool();
 
 /**
  * Build the system instruction for a session.
  * @param {{level: string, topic: string, adaptive: boolean, placement: boolean, learnerName?: string}} opts
  */
-export function buildSystemInstruction({ level, topic, adaptive = true, placement = false, learnerName = '' }) {
-  const lvl = getLevel(placement ? 'intermediate-low' : level);
-  const tpc = getTopic(topic);
+export function buildSystemInstruction({ course: courseId, level, topic, adaptive = true, placement = false, learnerName = '' }) {
+  const course = getCourse(courseId);
+  const range = courseLevels(courseId);
+  const lvl = getLevel(placement ? (course ? range[0].id : 'intermediate-low') : levelForCourse(level, courseId));
+  const tpc = getTopic(topic, courseId);
   const name = learnerName ? `The learner's name is ${learnerName}.` : '';
 
-  const levelTable = LEVELS.map((l) => `- ${l.id} (${l.name}): ${l.can}`).join('\n');
+  const levelTable = range.map((l) => `- ${l.id} (${l.name}): ${l.can}`).join('\n');
+  const lo = range[0].name;
+  const hi = range[range.length - 1].name;
+  const classContext = course
+    ? `CLASS CONTEXT
+You are talking with ${course.learner}, a teenager in a US high school. Their class works in the ACTFL range ${range.map((l) => l.name).join(', ')}; the class target is ${getLevel(course.target).name}. Stay inside this range at all times: never pitch your French below ${lo} or above ${hi}, and only report levels from this range. If a learner clearly needs simpler French than ${lo}, slow down, rephrase and offer choices rather than dropping below the range; if they are beyond ${hi}, keep ${hi} but make the tasks more challenging.
+`
+    : '';
 
   const adaptation = placement
     ? `PLACEMENT CONVERSATION
@@ -194,11 +231,11 @@ The learner does not know their level. Run a friendly, natural conversation (NOT
 - Warm up with easy questions.
 - Level checks: find what the learner can do comfortably and consistently.
 - Probes: try tasks from the next major level up (Novice→Intermediate: create sentences and ask questions; Intermediate→Advanced: narrate and describe in past/present/future in paragraphs; Advanced→Superior: support opinions, hypothesize, discuss abstract issues). Notice where their speech breaks down, then drop back to a comfortable level so they finish feeling successful.
-- If the first answers show they are a beginner, immediately simplify to Novice-level French.
+${course ? `- Start at ${lo} and only probe as high as ${hi}. Your estimate must be one of: ${range.map((l) => l.name).join(', ')}.` : '- If the first answers show they are a beginner, immediately simplify to Novice-level French.'}
 - Call ${LEVEL_TOOL_NAME} whenever your estimate becomes clearer. After about 8–10 exchanges, tell the learner (in simple French, plus one sentence of English if they are Novice or Intermediate Low) what they can do well, and keep chatting at that level.`
     : adaptive
       ? `ADAPTIVE MODE (on)
-Start at ${lvl.name}. Keep listening to what the learner can actually do. If they handle your French and the tasks easily and consistently, nudge up one sublevel (slightly richer language, more open tasks). If they struggle repeatedly (long silences, asking for repetition, switching to English), move down one sublevel. Move at most one sublevel at a time, and only after several exchanges of evidence. Call ${LEVEL_TOOL_NAME} each time you change, and once early on to confirm your starting point.`
+Start at ${lvl.name}. Keep listening to what the learner can actually do. If they handle your French and the tasks easily and consistently, nudge up one sublevel (slightly richer language, more open tasks). If they struggle repeatedly (long silences, asking for repetition, switching to English), move down one sublevel. Move at most one sublevel at a time, and only after several exchanges of evidence.${course ? ` Never go outside ${lo}–${hi}.` : ''} Call ${LEVEL_TOOL_NAME} each time you change, and once early on to confirm your starting point.`
       : `FIXED LEVEL
 Stay at ${lvl.name} for the whole conversation, even if the learner seems stronger or weaker; adjust only by rephrasing. You may still call ${LEVEL_TOOL_NAME} once early on with ${lvl.id}.`;
 
@@ -222,13 +259,14 @@ How to pitch your French:
 ${lvl.tutor}
 Language choice: ${lvl.english}
 
+${classContext}
 ${adaptation}
 
-ACTFL sublevels, for reference:
+ACTFL sublevels${course ? ' in this class' : ''}, for reference:
 ${levelTable}
 
 THEME: ${tpc.label}
-${tpc.id === 'free' ? 'Let the learner choose what to talk about; suggest a couple of easy options if they hesitate.' : 'Steer the conversation around this theme, but follow the learner if they take it somewhere interesting.'}
+${tpc.unitTitle ? `This theme comes from the class unit "${tpc.unitTitle}", so the learner has studied related vocabulary and ideas in class. Help them reuse it in a real conversation.\n` : ''}${tpc.guide ? `${tpc.guide}\nPick questions that fit the learner's level (simpler, concrete versions for Intermediate Low; stories, descriptions and explanations for Intermediate Mid/High; opinions with support and hypotheses for Advanced Low). Don't ask them all; follow the learner's ideas.\n` : ''}${tpc.id === 'free' ? 'Let the learner choose what to talk about; suggest a couple of easy options if they hesitate.' : 'Steer the conversation around this theme, but follow the learner if they take it somewhere interesting.'}
 
 APP MESSAGES
 Text in [square brackets] comes from buttons in the app, not from the learner's voice. Handle them like this:
@@ -242,8 +280,12 @@ Typed messages from the learner arrive as plain text without brackets; treat the
 STYLE FOR SPOKEN AUDIO
 Sound natural and friendly. No lists, no markdown, no emojis. Don't spell out punctuation. Be encouraging without being gushy. If the learner speaks English, respond in French at their level (with the allowed English support), and gently invite them to try in French.
 
-SAFETY
-Keep the conversation appropriate for learners of any age. If asked to do something unrelated to practising French conversation, steer back to the conversation in French.`;
+SAFETY AND RESPECT
+Learners may be teenagers. Keep the conversation appropriate for any age. If asked to do something unrelated to practising French conversation, steer back to the conversation in French.
+- Personal topics are always optional. The learner decides how much to share; offer to talk about people in general, a character, or an invented situation instead.
+- Never ask about anyone's immigration or legal status, or for private details (address, school name, full names, contact details, health information).
+- Be respectful of all cultures, families, religions and identities; avoid stereotypes, and present more than one perspective on debated issues.
+- WELL-BEING: if the learner says anything suggesting they are in danger, being hurt, or thinking about hurting themselves, stop the language practice. Respond kindly in simple English, tell them they deserve support, and encourage them to talk right away to a trusted adult such as a parent, teacher or school counselor, or to call or text 988 (Suicide & Crisis Lifeline, in the US) or local emergency services. Don't go back to the French practice unless they say they are okay.`;
 }
 
 /** Live API session config shared by the token minting function and the browser. */
@@ -258,6 +300,6 @@ export function buildLiveConfig(opts) {
     inputAudioTranscription: {},
     outputAudioTranscription: {},
     contextWindowCompression: { slidingWindow: {} },
-    tools: [LEVEL_TOOL],
+    tools: [makeLevelTool(courseLevels(opts.course).map((l) => l.id))],
   };
 }

@@ -2,7 +2,7 @@
 // The real API key never leaves the server. The token is locked to our model and
 // tutor configuration, so it can't be reused for anything else.
 import { GoogleGenAI } from '@google/genai';
-import { buildLiveConfig, getLevel, getTopic } from '../shared/tutor.js';
+import { buildLiveConfig, getCourse, getLevel, levelForCourse, allowedTopicIds } from '../shared/tutor.js';
 
 export const DEFAULT_MODEL = 'gemini-3.8-live';
 
@@ -13,9 +13,14 @@ const json = (status, body) =>
   });
 
 export function sanitizeOptions(body = {}) {
+  const course = getCourse(String(body.course ?? ''))?.id ?? null;
+  const level = levelForCourse(getLevel(String(body.level ?? '')).id, course);
+  const topic = String(body.topic ?? '');
   return {
-    level: getLevel(String(body.level ?? '')).id,
-    topic: getTopic(String(body.topic ?? '')).id,
+    course,
+    level,
+    // Only topics offered to this course and level are accepted.
+    topic: allowedTopicIds(course, level).includes(topic) ? topic : 'free',
     adaptive: body.adaptive !== false,
     placement: body.placement === true,
     voice: String(body.voice ?? ''),

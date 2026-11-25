@@ -28,6 +28,23 @@ for listening practice, and barge-in (you can interrupt Camille).
 All of the teaching logic lives in [`shared/tutor.js`](shared/tutor.js). Edit that file to adjust the levels,
 topics or persona.
 
+## Class versions
+
+Each class has its own link, so students go straight to their version:
+
+| Link | Levels offered | Unit topics |
+|---|---|---|
+| `/francais-4` | Intermediate Low, **Intermediate Mid (target)**, Intermediate High | Unité 1 · Les arts et les artistes; Unité 2 · L'amitié et les relations |
+| `/francais-5` | Intermediate Mid, **Intermediate High (target)**, Advanced Low (challenge) | Unité 1 · Les défis des ados; Unité 2 · L'immigration et la communauté |
+| `/libre` | All 11 ACTFL levels | General topics only |
+
+The home page (`/`) lets students pick their class. The server enforces each class's level range, so Camille
+stays inside it in fixed, adaptive and "find my level" modes. The general topics are available in every class too.
+
+**To add or change units,** edit [`shared/courses.js`](shared/courses.js). Each topic has a title, an emoji, and a
+short `guide` that tells Camille what to talk about and which questions to ask. Push the change and Render
+redeploys automatically.
+
 ## How it works
 
 ```

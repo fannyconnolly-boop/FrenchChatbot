@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
-import { LEVELS, VOICES, LEVEL_TOOL_NAME, getLevel, getTopic, topicsForLevel } from '../shared/tutor.js';
+import {
+  LEVELS, VOICES, LEVEL_TOOL_NAME, COURSES, getCourse, getLevel, getTopic, topicsForLevel, courseLevels, levelForCourse, allowedTopicIds,
+} from '../shared/tutor.js';
 import { MicStream, PcmPlayer } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,21 +21,42 @@ const store = {
   },
 };
 
-const TOPIC_EMOJI = {
-  free: '💬', intro: '👋', food: '🥐', routine: '☀️', cafe: '☕', travel: '🧳',
-  weekend: '📅', hotel: '🛎️', culture: '🎬', news: '📰', debate: '⚖️', ideas: '💡',
-};
-
 const meter = (levelId) => {
   const idx = LEVELS.findIndex((l) => l.id === levelId);
   return `<span class="meter" aria-hidden="true">${LEVELS.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</span>`;
 };
 
+/* ---------------- Routing: home, open practice, or a class ---------------- */
+
+const ALIASES = { 'french-4': 'francais-4', 'french4': 'francais-4', 'francais4': 'francais-4', 'f4': 'francais-4',
+  'french-5': 'francais-5', 'french5': 'francais-5', 'francais5': 'francais-5', 'f5': 'francais-5' };
+const slug = location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+const course = getCourse(ALIASES[slug] ?? slug);
+const page = course ? 'course' : slug === 'libre' ? 'open' : 'home';
+const key = (k) => `${course?.id ?? 'libre'}:${k}`;
+
+function renderHome() {
+  $('home').hidden = false;
+  $('courseCards').innerHTML = COURSES.map((c) => {
+    const levels = courseLevels(c.id)
+      .map((l) => `<span class="${l.id === c.target ? 'target' : ''}">${l.name}${l.id === c.target ? ' · target' : ''}</span>`)
+      .join('');
+    const units = c.units.map((u) => `<li><strong>${u.title.split(' · ')[0]}</strong>${u.title.split(' · ')[1] ?? ''}</li>`).join('');
+    return `<a class="course-card" href="/${c.id}">
+      <div><h2>${c.name}</h2><div class="tag">${c.tagline}</div></div>
+      <div class="range">${levels}</div>
+      <ul>${units}</ul>
+      <span class="btn primary go">Commencer ${icon('mic')}</span>
+    </a>`;
+  }).join('');
+}
+
 /* ---------------- Setup screen ---------------- */
 
+const range = courseLevels(course?.id);
 const state = {
-  level: store.get('level', 'intermediate-low'),
-  topic: store.get('topic', 'free'),
+  level: levelForCourse(store.get(key('level'), course?.target ?? 'intermediate-low'), course?.id),
+  topic: store.get(key('topic'), course?.units[0]?.topics[0]?.id ?? 'free'),
   voice: VOICES.includes(store.get('voice')) ? store.get('voice') : VOICES[0],
 };
 
@@ -48,9 +71,10 @@ function radio(el, checked, onSelect) {
 function renderLevels() {
   const box = $('levels');
   box.innerHTML = '';
+  box.classList.toggle('three', range.length <= 3);
   let group = '';
-  for (const l of LEVELS) {
-    if (l.group !== group) {
+  for (const l of range) {
+    if (l.group !== group && range.length > 3) {
       group = l.group;
       const h = document.createElement('div');
       h.className = 'group';
@@ -59,35 +83,61 @@ function renderLevels() {
     }
     const b = radio(document.createElement('button'), l.id === state.level, () => {
       state.level = l.id;
-      store.set('level', l.id);
+      store.set(key('level'), l.id);
       $('placement').checked = false;
       renderAll();
     });
     b.className = 'level';
-    b.innerHTML = `${meter(l.id)}<strong>${l.name}</strong><span class="desc">${l.can}</span><span class="check">${icon('check')}</span>`;
+    const badge = course?.badges?.[l.id];
+    b.innerHTML = `${meter(l.id)}<strong>${l.name}</strong><span class="desc">${l.can}</span>${
+      badge ? `<span class="tag ${badge === 'Challenge' ? 'challenge' : ''}">${badge}</span>` : ''
+    }<span class="check">${icon('check')}</span>`;
     box.append(b);
   }
   box.classList.toggle('disabled', $('placement').checked);
 }
 
+function topicTile(t) {
+  const [fr, en] = t.label.split(' — ');
+  const b = radio(document.createElement('button'), t.id === state.topic, () => {
+    state.topic = t.id;
+    store.set(key('topic'), t.id);
+    renderAll();
+  });
+  b.className = 'topic';
+  b.innerHTML = `<span class="emoji" aria-hidden="true">${t.emoji ?? '💬'}</span><span><strong></strong><small></small></span>`;
+  b.querySelector('strong').textContent = fr;
+  b.querySelector('small').textContent = en ?? '';
+  return b;
+}
+
 function renderTopics() {
   const box = $('topics');
   box.innerHTML = '';
-  const topics = topicsForLevel($('placement').checked ? 'novice-high' : state.level);
-  if (!topics.some((t) => t.id === state.topic)) state.topic = 'free';
-  for (const t of topics) {
-    const [fr, en] = t.label.split(' — ');
-    const b = radio(document.createElement('button'), t.id === state.topic, () => {
-      state.topic = t.id;
-      store.set('topic', t.id);
-      renderAll();
-    });
-    b.className = 'topic';
-    b.innerHTML = `<span class="emoji" aria-hidden="true">${TOPIC_EMOJI[t.id] ?? '💬'}</span><span><strong></strong><small></small></span>`;
-    b.querySelector('strong').textContent = fr;
-    b.querySelector('small').textContent = en ?? '';
-    box.append(b);
+  const level = $('placement').checked ? range[0].id : state.level;
+  const general = topicsForLevel(level);
+  const allowed = allowedTopicIds(course?.id, level);
+  if (!allowed.includes(state.topic)) state.topic = course?.units[0]?.topics[0]?.id ?? 'free';
+
+  if (!course) {
+    box.className = 'topics';
+    general.forEach((t) => box.append(topicTile(t)));
+    return;
   }
+  box.className = '';
+  for (const u of course.units) {
+    const [chip, title] = u.title.split(' · ');
+    const sec = document.createElement('div');
+    sec.className = 'unit';
+    sec.innerHTML = `<div class="unit-head"><span class="unit-chip">${chip}</span><h3>${title ?? ''}</h3><small>${u.subtitle ?? ''}</small></div><div class="topics unit-topics"></div>`;
+    u.topics.forEach((t) => sec.lastElementChild.append(topicTile(t)));
+    box.append(sec);
+  }
+  const sec = document.createElement('div');
+  sec.className = 'unit';
+  sec.innerHTML = `<div class="unit-head"><h3>Autres sujets</h3><small>General topics, if you'd like something different</small></div><div class="topics"></div>`;
+  general.forEach((t) => sec.lastElementChild.append(topicTile(t)));
+  box.append(sec);
 }
 
 function renderVoices() {
@@ -106,8 +156,8 @@ function renderVoices() {
 
 function renderSummary() {
   const level = $('placement').checked ? 'Finding my level' : getLevel(state.level).name;
-  const topic = getTopic(state.topic).label.split(' — ')[0];
-  $('summary').textContent = `${level} · ${topic}`;
+  const topic = getTopic(state.topic, course?.id).label.split(' — ')[0];
+  $('summary').textContent = `${course ? `${course.name} · ` : ''}${level} · ${topic}`;
 }
 
 function renderAll() {
@@ -116,12 +166,25 @@ function renderAll() {
   renderSummary();
 }
 
-$('learnerName').value = store.get('learnerName', '');
-$('accessCode').value = store.get('accessCode', '');
-if ($('accessCode').value) $('accessField').hidden = false;
-$('placement').onchange = renderAll;
-renderVoices();
-renderAll();
+if (page === 'home') {
+  renderHome();
+} else {
+  $('setup').hidden = false;
+  if (course) {
+    document.title = `${course.name} · Parlons !`;
+    $('coursePill').textContent = `${course.name} · ${course.tagline.replace(/^Target: /, 'Target ')}`;
+    $('setupEyebrow').querySelector('span').textContent = `${course.name} · ${course.tagline}`;
+    $('topicsHint').textContent = 'Pick a topic from your units, or any other topic.';
+  } else {
+    $('coursePill').textContent = 'Open practice · All levels';
+  }
+  $('learnerName').value = store.get('learnerName', '');
+  $('accessCode').value = store.get('accessCode', '');
+  if ($('accessCode').value) $('accessField').hidden = false;
+  $('placement').onchange = renderAll;
+  renderVoices();
+  renderAll();
+}
 
 /* ---------------- Conversation ---------------- */
 
@@ -212,6 +275,7 @@ function setEndButton(mode) {
 async function start() {
   $('setupError').textContent = '';
   const opts = {
+    course: course?.id ?? null,
     level: state.level,
     topic: state.topic,
     placement: $('placement').checked,
@@ -244,7 +308,7 @@ async function start() {
     $('levelEvidence').textContent = '';
     setEndButton('end');
     setMuteUi(false);
-    setLevelBadge(opts.placement ? 'intermediate-low' : opts.level, opts.placement ? 'Finding your level…' : '');
+    setLevelBadge(opts.placement ? range[0].id : opts.level, opts.placement ? 'Finding your level…' : '');
     setStatus('Connexion…', 'connecting');
     startVisualiser();
 
