@@ -90,7 +90,7 @@
           <div><h2>A few details</h2></div>
         </div>
         <div class="options">
-          <label class="field">Your first name <small>optional</small>
+          <label class="field" id="nameLabel">Your first name <small>optional</small>
             <input id="learnerName" maxlength="40" autocomplete="given-name" placeholder="e.g. Sam" />
           </label>
           <div class="field">Camille's voice
@@ -109,6 +109,7 @@
           <div><svg class="i"><use href="#i-heart" /></svg><span><strong>Meaning first.</strong> If Camille doesn't understand, she asks, just like a friend would.</span></div>
           <div><svg class="i"><use href="#i-life" /></svg><span><strong>Stuck?</strong> Tap <em>Slower</em>, <em>Repeat</em> or <em>Hint</em>, or type instead.</span></div>
           <div><svg class="i"><use href="#i-headphones" /></svg><span><strong>Headphones</strong> give the smoothest conversation.</span></div>
+          <div id="safetyTip" hidden><svg class="i"><use href="#i-shield" /></svg><span><strong>Your safety matters.</strong> If you share something that makes Camille worried about your safety, she'll pause the chat and let your teacher know.</span></div>
         </div>
       </section>
 
@@ -175,6 +176,17 @@
           </label>
         </div>
         <div id="transcript" class="transcript" aria-live="polite"></div>
+        <div id="carePanel" class="care" role="alert" hidden>
+          <div class="care-icon"><svg class="i"><use href="#i-heart" /></svg></div>
+          <h2>Let's pause here.</h2>
+          <p>Thank you for sharing. You matter, and you deserve support.</p>
+          <p id="careTeacher"></p>
+          <ul>
+            <li><svg class="i"><use href="#i-users" /></svg><span><strong>Talk to someone you trust today</strong>: a parent, a teacher, or your school counselor.</span></li>
+            <li><svg class="i"><use href="#i-phone" /></svg><span><strong>Call or text 988</strong> (Suicide &amp; Crisis Lifeline) any time, day or night, if you're struggling or thinking about suicide.</span></li>
+            <li><svg class="i"><use href="#i-alert" /></svg><span><strong>Call 911</strong> if you are in danger right now.</span></li>
+          </ul>
+        </div>
         <form id="textForm" class="composer">
           <input id="textInput" placeholder="Écris ici si tu préfères…" autocomplete="off" />
           <button class="btn primary icon" aria-label="Send"><svg class="i"><use href="#i-send" /></svg></button>
@@ -203,6 +215,10 @@
         <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z" /></symbol>
         <symbol id="i-life" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><path d="m4.9 4.9 4.3 4.3M14.8 14.8l4.3 4.3M14.8 9.2l4.3-4.3M4.9 19.1l4.3-4.3" /></symbol>
         <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" /></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" /></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></symbol>
         <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
       </defs>
     </svg>

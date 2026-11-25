@@ -45,6 +45,35 @@ stays inside it in fixed, adaptive and "find my level" modes. The general topics
 short `guide` that tells Camille what to talk about and which questions to ask. Push the change and Render
 redeploys automatically.
 
+## Well-being alerts
+
+If a student says something suggesting they may be in danger (thoughts of suicide or self-harm, being hurt or
+abused, being unsafe, or intending to hurt someone), Camille:
+
+1. Silently raises an alert. She is told not to do this for everyday stress or figures of speech like « ce devoir me tue ».
+2. Says a short, caring message in English and stops the French practice.
+3. Ends the session and shows a "Let's pause here" screen: talk to a trusted adult or the school counselor, call
+   or text 988, or call 911 in an emergency.
+4. Emails the teacher the student's name, the class, what she noticed, and the last few exchanges.
+
+Every alert is also written to **Render → Logs** (search for `WELL-BEING ALERT`), even if email isn't set up.
+On the class pages, students must enter their name, and a tip on the setup screen tells them about this.
+
+**To turn on email alerts (about 5 minutes):**
+1. Sign up at <https://resend.com> **using the email address that should receive the alerts**.
+2. In Resend, go to **API Keys → Create API key** and copy the key.
+3. In Render, open your service → **Environment** and add `TEACHER_EMAIL` (that same address) and `RESEND_API_KEY`
+   (the key). You can also set `TEACHER_TIMEZONE` (default `America/New_York`). Save, and Render redeploys.
+
+On Resend's free plan, without verifying a domain, it can only send to your own sign-up address. That's
+fine for this use. To send to several people (e.g. a counselor too), verify a domain in Resend and set
+`ALERT_FROM_EMAIL`, then list the addresses comma-separated in `TEACHER_EMAIL`.
+
+Camille only tells students their teacher is being notified when email alerts are configured.
+
+> This is an AI safety net, not a monitoring system. It can miss things or raise false alarms, and it doesn't
+> replace supervision or your school's procedures. Check your district's policy on student data in AI tools.
+
 ## How it works
 
 ```
@@ -72,6 +101,7 @@ and it uses no dependencies beyond Node itself.
    | `GEMINI_API_KEY` | yes | Your Gemini API key |
    | `ACCESS_CODE` | recommended | Learners must enter this code before starting. Without it, anyone with the link can use your quota. |
    | `GEMINI_LIVE_MODEL` | no | Overrides the Live model (default `gemini-3.8-live`). Check the current IDs at <https://ai.google.dev/gemini-api/docs/models>. |
+   | `TEACHER_EMAIL`, `RESEND_API_KEY` | recommended | Email well-being alerts to you (see [Well-being alerts](#well-being-alerts)). |
    | `SESSIONS_PER_HOUR_PER_IP` | no | Limits how many conversations one network can start per hour (default 30). |
 4. Open the `https://….onrender.com` URL. Render serves it over HTTPS, which browsers require for the microphone.
 

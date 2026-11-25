@@ -53,7 +53,8 @@ export default async function handler(req) {
 
   const opts = sanitizeOptions(body);
   const model = env('GEMINI_LIVE_MODEL') || DEFAULT_MODEL;
-  const config = buildLiveConfig(opts);
+  // Camille only tells students their teacher will be alerted if alert emails are actually set up.
+  const config = buildLiveConfig({ ...opts, teacherAlerts: Boolean(env('RESEND_API_KEY') && env('TEACHER_EMAIL')) });
 
   try {
     const ai = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1alpha' } });

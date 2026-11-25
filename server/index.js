@@ -5,6 +5,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tokenHandler from './token.js';
+import flagHandler from './flag.js';
 
 const ROOT = fileURLToPath(new URL('../dist/', import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
@@ -38,9 +39,11 @@ function rateLimited(ip) {
   return recent.length > LIMIT_PER_HOUR;
 }
 
-async function handleToken(req, res) {
-  const ip = String(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '').split(',')[0].trim();
-  if (req.method === 'POST' && rateLimited(ip)) {
+const clientIp = (req) => String(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '').split(',')[0].trim();
+
+async function handleApi(req, res, handler) {
+  const ip = clientIp(req);
+  if (handler === tokenHandler && req.method === 'POST' && rateLimited(ip)) {
     res.writeHead(429, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ error: 'Too many conversations started from this network. Try again later.' }));
   }
@@ -59,7 +62,7 @@ async function handleToken(req, res) {
     headers: req.headers,
     body: req.method === 'POST' ? Buffer.concat(chunks) : undefined,
   });
-  const response = await tokenHandler(request);
+  const response = await handler(request, ip);
   res.writeHead(response.status, Object.fromEntries(response.headers));
   res.end(await response.text());
 }
@@ -94,7 +97,8 @@ async function serveStatic(req, res) {
 createServer(async (req, res) => {
   try {
     if (req.url === '/healthz') return res.end('ok');
-    if (req.url.startsWith('/api/token')) return await handleToken(req, res);
+    if (req.url.startsWith('/api/token')) return await handleApi(req, res, tokenHandler);
+    if (req.url.startsWith('/api/flag')) return await handleApi(req, res, flagHandler);
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405);
       return res.end();

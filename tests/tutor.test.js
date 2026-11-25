@@ -97,3 +97,48 @@ test('open practice keeps all levels and general topics', () => {
   assert.equal(o.topic, 'free');
   assert.equal(buildLiveConfig(o).tools[0].functionDeclarations[0].parameters.properties.level.enum.length, 11);
 });
+
+import flagHandler, { buildAlert } from '../server/flag.js';
+
+test('flag tool is offered and the prompt says to call it first', () => {
+  const c = buildLiveConfig({ course: 'francais-5', level: 'intermediate-high', topic: 'f5-stress' });
+  assert.ok(c.tools[0].functionDeclarations.some((f) => f.name === 'flag_wellbeing_concern'));
+  assert.match(c.systemInstruction, /FIRST call flag_wellbeing_concern/);
+  assert.match(c.systemInstruction, /figures of speech are NOT emergencies/);
+  assert.doesNotMatch(c.systemInstruction, /teacher is being told/);
+  assert.match(buildLiveConfig({ course: 'francais-5', teacherAlerts: true }).systemInstruction, /teacher is being told/);
+});
+
+test('alerts are sanitised', () => {
+  const a = buildAlert({ course: 'francais-4', learnerName: 'Sam R.\u0007', category: 'bogus', summary: 'x'.repeat(900),
+    excerpt: [{ who: 'tutor', text: 'Ça va ?' }, { who: 'me', text: 'Non…' }] });
+  assert.equal(a.student, 'Sam R.');
+  assert.equal(a.className, 'Français 4');
+  assert.equal(a.category, 'other');
+  assert.equal(a.summary.length, 500);
+  assert.deepEqual(a.excerpt, ['Camille: Ça va ?', 'Student: Non…']);
+});
+
+test('flag endpoint emails the teacher via Resend when configured, and rate-limits', async () => {
+  const saved = { ...process.env };
+  const realFetch = globalThis.fetch;
+  const sent = [];
+  globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Response('{}'); };
+  const warn = console.warn; console.warn = () => {};
+  try {
+    process.env.RESEND_API_KEY = 're_test';
+    process.env.TEACHER_EMAIL = 'teacher@example.com';
+    const req = () => new Request('http://x', { method: 'POST', body: JSON.stringify({ course: 'francais-5', learnerName: 'Ana', category: 'self-harm', summary: 'said x' }) });
+    const r = await flagHandler(req(), '1.2.3.4');
+    assert.deepEqual(await r.json(), { notified: true });
+    assert.equal(sent[0].url, 'https://api.resend.com/emails');
+    assert.deepEqual(sent[0].body.to, ['teacher@example.com']);
+    assert.match(sent[0].body.subject, /Ana \(Français 5\)/);
+    for (let i = 0; i < 4; i++) await flagHandler(req(), '1.2.3.4');
+    assert.equal((await flagHandler(req(), '1.2.3.4')).status, 429);
+    delete process.env.RESEND_API_KEY;
+    assert.deepEqual(await (await flagHandler(req(), '5.6.7.8')).json(), { notified: false, logged: true });
+  } finally {
+    globalThis.fetch = realFetch; console.warn = warn; process.env = saved;
+  }
+});

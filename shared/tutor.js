@@ -173,6 +173,25 @@ export function allowedTopicIds(courseId, levelId) {
 export const VOICES = ['Aoede', 'Kore', 'Leda', 'Charon', 'Puck', 'Fenrir'];
 
 export const LEVEL_TOOL_NAME = 'update_level_estimate';
+export const FLAG_TOOL_NAME = 'flag_wellbeing_concern';
+
+/** Function the tutor calls when a learner's safety may be at risk: the app ends the chat and alerts the teacher. */
+export const FLAG_DECLARATION = {
+  name: FLAG_TOOL_NAME,
+  description:
+    "Call this immediately, before saying anything else, if the learner says something suggesting they may be in danger: thoughts of suicide or self-harm, being hurt or abused, being unsafe at home, or intending to hurt someone. The app will pause the conversation and alert the learner's teacher. Do NOT call it for everyday stress, normal frustration, or figures of speech (e.g. « ce devoir me tue »).",
+  parameters: {
+    type: 'OBJECT',
+    properties: {
+      category: { type: 'STRING', enum: ['self-harm', 'harm-to-others', 'abuse-or-unsafe', 'other'] },
+      summary: {
+        type: 'STRING',
+        description: 'One or two factual sentences in English for the teacher: what the learner said that raised the concern (quote or closely paraphrase).',
+      },
+    },
+    required: ['category', 'summary'],
+  },
+};
 
 /** Function the tutor calls (silently) to tell the app how it is currently pitching the conversation. */
 export function makeLevelTool(levelIds = LEVELS.map((l) => l.id)) {
@@ -199,6 +218,7 @@ export function makeLevelTool(levelIds = LEVELS.map((l) => l.id)) {
         required: ['level', 'evidence'],
       },
     },
+    FLAG_DECLARATION,
   ],
   };
 }
@@ -209,7 +229,7 @@ export const LEVEL_TOOL = makeLevelTool();
  * Build the system instruction for a session.
  * @param {{level: string, topic: string, adaptive: boolean, placement: boolean, learnerName?: string}} opts
  */
-export function buildSystemInstruction({ course: courseId, level, topic, adaptive = true, placement = false, learnerName = '' }) {
+export function buildSystemInstruction({ course: courseId, level, topic, adaptive = true, placement = false, learnerName = '', teacherAlerts = false }) {
   const course = getCourse(courseId);
   const range = courseLevels(courseId);
   const lvl = getLevel(placement ? (course ? range[0].id : 'intermediate-low') : levelForCourse(level, courseId));
@@ -285,7 +305,8 @@ Learners may be teenagers. Keep the conversation appropriate for any age. If ask
 - Personal topics are always optional. The learner decides how much to share; offer to talk about people in general, a character, or an invented situation instead.
 - Never ask about anyone's immigration or legal status, or for private details (address, school name, full names, contact details, health information).
 - Be respectful of all cultures, families, religions and identities; avoid stereotypes, and present more than one perspective on debated issues.
-- WELL-BEING: if the learner says anything suggesting they are in danger, being hurt, or thinking about hurting themselves, stop the language practice. Respond kindly in simple English, tell them they deserve support, and encourage them to talk right away to a trusted adult such as a parent, teacher or school counselor, or to call or text 988 (Suicide & Crisis Lifeline, in the US) or local emergency services. Don't go back to the French practice unless they say they are okay.`;
+- WELL-BEING: if the learner says anything suggesting they may be in danger (thoughts of suicide or self-harm, being hurt or abused, being unsafe, or intending to hurt someone), FIRST call ${FLAG_TOOL_NAME}. Then, in calm, simple English, say a short caring message (4–5 sentences): thank them for telling you; say you care and they deserve support; say you are pausing the French practice now${teacherAlerts ? ' and that their teacher is being told so they can check in with them' : ''}; encourage them to talk today to a trusted adult such as a parent, teacher or school counselor; and say that if they are in danger right now or thinking about suicide, they can call or text 988, or call 911. Then stop: do not continue the conversation or the French practice. Don't diagnose, don't ask probing questions, and don't promise to keep secrets.
+- Everyday stress, frustration, sadness about ordinary things, and figures of speech are NOT emergencies: respond with normal warmth and keep talking. If a statement is genuinely ambiguous but could be serious, treat it as serious.`;
 }
 
 /** Live API session config shared by the token minting function and the browser. */

@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import {
-  LEVELS, VOICES, LEVEL_TOOL_NAME, COURSES, getCourse, getLevel, getTopic, topicsForLevel, courseLevels, levelForCourse, allowedTopicIds,
+  LEVELS, VOICES, LEVEL_TOOL_NAME, FLAG_TOOL_NAME, COURSES, getCourse, getLevel, getTopic, topicsForLevel, courseLevels, levelForCourse, allowedTopicIds,
 } from '../shared/tutor.js';
 import { MicStream, PcmPlayer } from './audio.js';
 
@@ -175,6 +175,10 @@ if (page === 'home') {
     $('coursePill').textContent = `${course.name} · ${course.tagline.replace(/^Target: /, 'Target ')}`;
     $('setupEyebrow').querySelector('span').textContent = `${course.name} · ${course.tagline}`;
     $('topicsHint').textContent = 'Pick a topic from your units, or any other topic.';
+    $('nameLabel').firstChild.textContent = 'Your name ';
+    $('nameLabel').querySelector('small').textContent = 'first name and last initial, so your teacher knows it was you';
+    $('learnerName').placeholder = 'e.g. Sam R.';
+    $('safetyTip').hidden = false;
   } else {
     $('coursePill').textContent = 'Open practice · All levels';
   }
@@ -198,6 +202,9 @@ let rafId = null;
 let micLevel = 0;
 let currentUser = null;
 let currentTutor = null;
+let history = []; // [{ who, el }] for the well-being alert excerpt
+let flagged = false;
+let flagTimer = null;
 
 // Visualiser bars
 const BARS = 24;
@@ -229,6 +236,7 @@ function bubble(who, text = '') {
   msg.textContent = text;
   msg.setAttribute('aria-label', who === 'tutor' ? 'Camille' : who === 'me' ? 'You' : 'Note');
   $('transcript').append(row);
+  if (who !== 'note') history.push({ who, el: msg });
   scrollChat();
   return msg;
 }
@@ -283,6 +291,11 @@ async function start() {
     voice: state.voice,
     learnerName: $('learnerName').value.trim(),
   };
+  if (course && !opts.learnerName) {
+    $('setupError').textContent = 'Please enter your name so your teacher knows who you are.';
+    $('learnerName').focus();
+    return;
+  }
   store.set('learnerName', opts.learnerName);
   store.set('accessCode', $('accessCode').value.trim());
 
@@ -305,6 +318,11 @@ async function start() {
     $('convo').hidden = false;
     window.scrollTo({ top: 0 });
     $('transcript').innerHTML = '';
+    history = [];
+    flagged = false;
+    $('carePanel').hidden = true;
+    $('convo').classList.remove('paused');
+    sessionInfo = { course: opts.course, learnerName: opts.learnerName };
     $('levelEvidence').textContent = '';
     setEndButton('end');
     setMuteUi(false);
@@ -369,6 +387,7 @@ function handleMessage(msg) {
   if (msg.toolCall?.functionCalls?.length) {
     const responses = msg.toolCall.functionCalls.map((fc) => {
       if (fc.name === LEVEL_TOOL_NAME && fc.args?.level) setLevelBadge(fc.args.level, fc.args.evidence || '');
+      if (fc.name === FLAG_TOOL_NAME) raiseFlag(fc.args ?? {});
       return { id: fc.id, name: fc.name, response: { result: 'ok' } };
     });
     session?.sendToolResponse({ functionResponses: responses });
@@ -393,6 +412,7 @@ function handleMessage(msg) {
       currentTutor ??= bubble('tutor');
       appendTo(currentTutor, sc.outputTranscription.text);
     }
+    if (sc.turnComplete && flagged) finishFlag();
     if (sc.turnComplete) {
       currentUser = null;
       currentTutor = null;
@@ -429,7 +449,52 @@ function startVisualiser() {
   rafId = requestAnimationFrame(tick);
 }
 
+/* ---------------- Well-being alert ---------------- */
+
+let sessionInfo = {};
+let flagNotified = null;
+
+function raiseFlag({ category, summary }) {
+  if (flagged) return;
+  flagged = true;
+  // Stop listening: the conversation is over once Camille has said her caring message.
+  if (mic) {
+    mic.setMuted(true);
+    setMuteUi(true);
+  }
+  if (session && ready) session.sendRealtimeInput({ audioStreamEnd: true });
+  $('convo').classList.add('paused');
+  setStatus('Pause', 'speaking');
+  const excerpt = history.map((h) => ({ who: h.who, text: h.el.textContent }));
+  flagNotified = fetch('/api/flag', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...sessionInfo, category, summary, excerpt }),
+  })
+    .then((r) => r.json())
+    .then((j) => j.notified === true)
+    .catch(() => false);
+  // If Camille's message never completes, end anyway.
+  flagTimer = setTimeout(finishFlag, 30_000);
+}
+
+async function finishFlag() {
+  clearTimeout(flagTimer);
+  // Let Camille finish speaking before closing.
+  for (let i = 0; i < 60 && player?.sources?.size; i++) await new Promise((r) => setTimeout(r, 250));
+  const notified = await flagNotified;
+  if (!flagged) return;
+  stop(false);
+  setStatus('Pause', 'idle');
+  $('careTeacher').textContent = notified
+    ? 'Your teacher has been notified so they can check in with you.'
+    : 'Please let your teacher or school counselor know how you are feeling.';
+  $('carePanel').hidden = false;
+  $('carePanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function cleanup() {
+  clearTimeout(flagTimer);
   ready = false;
   clearInterval(timerId);
   cancelAnimationFrame(rafId);

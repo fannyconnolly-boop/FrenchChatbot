@@ -16,3 +16,7 @@ services:
         sync: false
       - key: ACCESS_CODE
         sync: false
+      - key: TEACHER_EMAIL # where well-being alerts are sent
+        sync: false
+      - key: RESEND_API_KEY # from resend.com, used to send the alert emails
+        sync: false
