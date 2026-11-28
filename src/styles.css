@@ -391,3 +391,21 @@ input:focus-visible ~ .switch { outline: 3px solid var(--primary); outline-offse
 .tips:has(#safetyTip:not([hidden])) { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 760px) { .tips:has(#safetyTip:not([hidden])) { grid-template-columns: 1fr; } }
 .convo:has(.orb[data-state='idle']) .live { visibility: hidden; }
+
+/* ---------- Feedback report ---------- */
+.report-row { justify-content: stretch; }
+.report { width: 100%; padding: 20px 22px; border-radius: 18px; background: var(--surface-solid); border: 1.5px solid var(--primary); box-shadow: var(--shadow-lg); }
+.report h2 { margin: 0 0 12px; font-size: 24px; }
+.report h3 { margin: 16px 0 8px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--primary); font-family: Inter, system-ui, sans-serif; }
+.report section:first-of-type h3 { margin-top: 0; }
+.report-item { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); margin-bottom: 8px; }
+.report-item p { margin: 6px 0 0; }
+.report blockquote { margin: 6px 0 0; font-style: italic; }
+.report .pair { display: grid; gap: 2px; }
+.report .pair .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.report .pair .fr { font-style: italic; }
+.report .pair.better .fr { color: var(--primary); font-weight: 500; }
+.report .challenge { padding: 12px 14px; border-radius: 12px; background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft)); margin-top: 16px; }
+.report .challenge h3 { margin-top: 0; }
+.report .challenge p { margin: 0; font-weight: 500; }
+.report-note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }

@@ -45,6 +45,23 @@ stays inside it in fixed, adaptive and "find my level" modes. The general topics
 short `guide` that tells Camille what to talk about and which questions to ask. Push the change and Render
 redeploys automatically.
 
+## End-of-conversation feedback
+
+When a student clicks **Finish & get feedback**, Camille says goodbye in French and mentions in English that the report
+is on screen. A separate Gemini text request then writes a feedback report in English from the captured transcript:
+
+- **What you did well:** up to two strengths, each with a quote of what the student said.
+- **How you can improve:** one or two communication skills, each with the student's own sentence, a stronger
+  French version of the same idea, and an English explanation of why it's stronger.
+- **Your next speaking challenge:** one specific, achievable goal.
+
+The focus is set by class in [`shared/feedback.js`](shared/feedback.js). French 4 focuses on reasons, examples,
+connectors, past narration and asking questions. French 5 focuses on depth, connected discourse, qui/que clauses,
+time frames, conditional and subjunctive, and supported opinions. The server drops any point whose quote doesn't
+appear word for word in what the student said, removes any ACTFL level wording, and says so when the transcript is
+too short. No proficiency rating is given. Set `GEMINI_FEEDBACK_MODEL` to change the text model (default
+`gemini-3.8-flash`).
+
 ## Well-being alerts
 
 If a student says something suggesting they may be in danger (thoughts of suicide or self-harm, being hurt or

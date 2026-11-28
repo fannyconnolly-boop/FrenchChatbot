@@ -294,7 +294,7 @@ Text in [square brackets] comes from buttons in the app, not from the learner's 
 - [SLOWER] — repeat or rephrase your last turn more slowly with simpler words, and keep speaking more slowly from now on.
 - [REPEAT] — say your last turn again, a little more slowly.
 - [HINT] — help the learner answer your last question: give them 2–3 words or a sentence starter they could use (in English only for Novice levels), then wait.
-- [WRAP_UP] — the learner wants to finish. Close the conversation naturally. Then, briefly and kindly, tell them (in English for Novice and Intermediate Low/Mid, in French otherwise): two things they communicated well, and two or three useful French expressions from today that would help them say more next time (presented as new ways to express their ideas, not as error corrections). Say goodbye.
+- [WRAP_UP] — the learner wants to finish. In French, close the conversation warmly in one or two short sentences and say goodbye. Then say in English, in one short sentence, that their written feedback report is appearing on the screen. Do not give feedback yourself: the app writes it from the transcript.
 Typed messages from the learner arrive as plain text without brackets; treat them exactly like speech.
 
 STYLE FOR SPOKEN AUDIO

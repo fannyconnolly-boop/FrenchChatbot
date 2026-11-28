@@ -1,11 +1,11 @@
 import { defineConfig, loadEnv } from 'vite';
 
-// In development, serve /api/token and /api/flag so `npm run dev` works without the Netlify CLI.
+// In development, serve the /api endpoints so `npm run dev` works without the Netlify CLI.
 function devTokenApi() {
   return {
     name: 'dev-token-api',
     configureServer(server) {
-      for (const [path, file] of [['/api/token', '/server/token.js'], ['/api/flag', '/server/flag.js']]) {
+      for (const [path, file] of [['/api/token', '/server/token.js'], ['/api/flag', '/server/flag.js'], ['/api/feedback', '/server/feedback.js']]) {
         server.middlewares.use(path, async (req, res) => {
           const { default: handler } = await server.ssrLoadModule(file);
           const chunks = [];

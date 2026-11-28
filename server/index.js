@@ -6,6 +6,7 @@ import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tokenHandler from './token.js';
 import flagHandler from './flag.js';
+import feedbackHandler from './feedback.js';
 
 const ROOT = fileURLToPath(new URL('../dist/', import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
@@ -51,7 +52,7 @@ async function handleApi(req, res, handler) {
   let size = 0;
   for await (const c of req) {
     size += c.length;
-    if (size > 10_000) {
+    if (size > 200_000) {
       res.writeHead(413);
       return res.end();
     }
@@ -99,6 +100,7 @@ createServer(async (req, res) => {
     if (req.url === '/healthz') return res.end('ok');
     if (req.url.startsWith('/api/token')) return await handleApi(req, res, tokenHandler);
     if (req.url.startsWith('/api/flag')) return await handleApi(req, res, flagHandler);
+    if (req.url.startsWith('/api/feedback')) return await handleApi(req, res, feedbackHandler);
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405);
       return res.end();

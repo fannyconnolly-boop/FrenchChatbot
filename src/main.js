@@ -322,7 +322,7 @@ async function start() {
     flagged = false;
     $('carePanel').hidden = true;
     $('convo').classList.remove('paused');
-    sessionInfo = { course: opts.course, learnerName: opts.learnerName };
+    sessionInfo = { course: opts.course, learnerName: opts.learnerName, topic: opts.topic };
     $('levelEvidence').textContent = '';
     setEndButton('end');
     setMuteUi(false);
@@ -547,7 +547,90 @@ for (const b of document.querySelectorAll('.helpers button')) {
 $('wrapBtn').onclick = () => {
   player?.flush();
   send('[WRAP_UP]');
+  requestFeedback();
 };
+
+/* ---------------- Written feedback report ---------------- */
+
+async function requestFeedback() {
+  if (!history.length) return;
+  $('wrapBtn').disabled = true;
+  const loading = bubble('note', 'Preparing your feedback report…');
+  // Give the student's last words a moment to finish transcribing.
+  await new Promise((r) => setTimeout(r, 1500));
+  const transcript = history.map((h) => ({ who: h.who, text: h.el.textContent }));
+  const headers = { 'content-type': 'application/json' };
+  const code = $('accessCode').value.trim();
+  if (code) headers['x-access-code'] = code;
+  try {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ course: sessionInfo.course, topic: sessionInfo.topic, transcript }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+    loading.closest('.row').remove();
+    renderReport(data);
+  } catch (err) {
+    console.error(err);
+    loading.textContent = 'Sorry, the feedback report could not be created. Please try again.';
+  } finally {
+    $('wrapBtn').disabled = false;
+  }
+}
+
+function renderReport(r) {
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const card = el('div', 'report');
+  card.append(el('h2', '', 'Your feedback'));
+
+  if (r.strengths?.length) {
+    const sec = el('section');
+    sec.append(el('h3', '', 'What you did well'));
+    for (const s of r.strengths) {
+      const item = el('div', 'report-item');
+      item.append(el('strong', '', s.skill), el('blockquote', 'fr', `« ${s.quote} »`), el('p', '', s.explanation));
+      sec.append(item);
+    }
+    card.append(sec);
+  }
+
+  if (r.improvements?.length) {
+    const sec = el('section');
+    sec.append(el('h3', '', 'How you can improve'));
+    for (const s of r.improvements) {
+      const item = el('div', 'report-item');
+      item.append(el('strong', '', s.skill));
+      const said = el('p', 'pair');
+      said.append(el('span', 'label', 'You said'), el('span', 'fr', `« ${s.quote} »`));
+      const better = el('p', 'pair better');
+      better.append(el('span', 'label', 'A stronger way to say it'), el('span', 'fr', `« ${s.improved} »`));
+      item.append(said, better, el('p', '', s.why));
+      sec.append(item);
+    }
+    card.append(sec);
+  }
+
+  if (r.challenge) {
+    const sec = el('section', 'challenge');
+    sec.append(el('h3', '', 'Your next speaking challenge'), el('p', '', r.challenge));
+    card.append(sec);
+  }
+
+  card.append(
+    el('p', 'report-note', `${r.limitations ? `${r.limitations} ` : ''}This feedback is based on an automatic transcript, which may have misheard some words.`)
+  );
+  const row = el('div', 'row report-row');
+  row.append(card);
+  $('transcript').append(row);
+  row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 $('textForm').onsubmit = (e) => {
   e.preventDefault();
   const text = $('textInput').value.trim();
